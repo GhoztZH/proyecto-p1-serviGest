@@ -1,0 +1,22 @@
+# 1. Dependencias (pesadas y reinstalables con npm install)
+node_modules/
+
+# 2. Variables de entorno y contraseñas (CRÍTICO por seguridad)
+.env
+.env.local
+.env.*.local
+
+# 3. Archivos de compilación o producción (Vite y TypeScript)
+dist/
+dist-ssr/
+*.tsbuildinfo
+
+# 4. Registros de errores (Logs)
+logs/
+*.log
+npm-debug.log*
+
+# 5. Archivos ocultos del sistema operativo y editores
+.DS_Store
+Thumbs.db
+.vscode/
