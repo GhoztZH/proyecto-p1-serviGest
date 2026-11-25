@@ -63,10 +63,10 @@ export function NuevaSolicitudPage() {
 
   // Cargar sedes cuando cambia el cliente
   useEffect(() => {
-    const clienteId = esCliente ? user?.id : Number(f.cliente_id);
-    if (!clienteId) { setSedes([]); return; }
+    const clienteId = esCliente ? user?.clienteId : Number(f.cliente_id);
+    if (!clienteId) return;
     api.get<{ data: Sede[] }>(`/clientes/${clienteId}/sedes`).then((r) => setSedes(r.data.data ?? [])).catch(() => setSedes([]));
-  }, [f.cliente_id, esCliente, user?.id]);
+  }, [f.cliente_id, esCliente, user?.clienteId]);
 
   const cambiar = (campo: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     setF((prev) => ({ ...prev, [campo]: e.target.value }));
@@ -108,12 +108,15 @@ export function NuevaSolicitudPage() {
         ...(!esCliente && f.cliente_id ? { cliente_id: Number(f.cliente_id) } : {}),
       };
       const sol = await solicitudService.crear(datos, archivos);
-      navigate(`/solicitudes/${sol.id}`);
+      navigate(`/requests/${sol.id}`);
     } catch (err: unknown) {
-      const e = err as { response?: { data?: { error?: { message?: string }; details?: { campo: string; mensaje: string }[] } }; message?: string };
+      const e = err as {
+        response?: { data?: { error?: { message?: string; details?: { campo: string; mensaje: string }[] } } };
+        message?: string;
+      };
       const detalle = e?.response?.data?.error;
       if (detalle?.message) setError(detalle.message);
-      const detalles = e?.response?.data?.details;
+      const detalles = e?.response?.data?.error?.details;
       if (Array.isArray(detalles)) {
         const map: Record<string, string> = {};
         detalles.forEach((d) => { map[d.campo] = d.mensaje; });
@@ -175,7 +178,11 @@ export function NuevaSolicitudPage() {
             <label style={labelStyle}>Cliente *</label>
             <select
               value={f.cliente_id}
-              onChange={(e) => { cambiar('cliente_id')(e); setF((prev) => ({ ...prev, sede_id: '' })); }}
+              onChange={(e) => {
+                cambiar('cliente_id')(e);
+                setSedes([]);
+                setF((prev) => ({ ...prev, sede_id: '' }));
+              }}
               style={inputStyle('cliente_id')}
               required
             >
@@ -298,7 +305,7 @@ export function NuevaSolicitudPage() {
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '8px' }}>
           <Link
-            to="/solicitudes"
+            to="/requests"
             style={{
               display: 'inline-flex',
               alignItems: 'center',

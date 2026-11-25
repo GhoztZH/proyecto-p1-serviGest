@@ -1,6 +1,6 @@
 import { esGestion, type AuthUser } from '../../../../shared/domain/auth-user.js';
 import { BusinessRuleError, ForbiddenError, ValidationError } from '../../../../shared/domain/errors.js';
-import { ESTADOS, type Estado } from '../../../../shared/domain/estados.js';
+import type { Estado } from '../../../../shared/domain/estados.js';
 import type { DatosAcceso } from './acceso.js';
 
 /** Mapa de transiciones válidas de la máquina de estados. */
@@ -13,13 +13,6 @@ const TRANSICIONES: Readonly<Record<Estado, readonly Estado[]>> = {
   RESUELTA:        ['CERRADA', 'EN_PROCESO'],
   CERRADA:         [],
   CANCELADA:       [],
-};
-
-/** Transiciones que solo puede hacer el rol de gestión. */
-const SOLO_GESTION: Readonly<Partial<Record<Estado, readonly Estado[]>>> = {
-  REGISTRADA:  ['APROBADA', 'CANCELADA'],
-  APROBADA:    ['CANCELADA'],
-  RESUELTA:    ['CERRADA', 'EN_PROCESO'],
 };
 
 /** Transiciones que puede hacer el técnico asignado. */

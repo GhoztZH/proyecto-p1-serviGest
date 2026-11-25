@@ -1,9 +1,8 @@
+import type { Rol } from '../domain/auth-user.js';
+
 /**
  * Puertos e interfaces compartidas entre módulos para desacoplar implementaciones.
- * Usadas por Int. 3 (requests), Int. 4 (audit/notifications), etc.
  */
-import type { Rol } from '../domain/auth-user';
-
 export interface PasswordHasher {
   hash(plain: string): Promise<string>;
   verify(hash: string, plain: string): Promise<boolean>;
@@ -28,6 +27,29 @@ export interface RegistroAuditoria {
 
 export interface AuditLogger {
   registrar(registro: RegistroAuditoria): Promise<void>;
+}
+
+/** Placeholder hasta que el módulo de auditoría persista en base de datos. */
+export const noopAuditLogger: AuditLogger = {
+  async registrar(registro): Promise<void> {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log(`[AUDIT PLACEHOLDER] ${registro.accion} en ${registro.entidad} por usuario ${registro.usuarioId ?? 'anónimo'}`);
+    }
+  },
+};
+
+/** Gestión de cuentas de acceso que otros módulos (clientes, técnicos) necesitan. */
+export interface CuentaNueva {
+  email: string;
+  password: string;
+  nombre: string;
+  rol: Rol;
+}
+
+export interface CuentasUsuario {
+  crear(cuenta: CuentaNueva): Promise<number>;
+  actualizar(id: number, cambios: { nombre?: string; email?: string; activo?: boolean }): Promise<void>;
+  eliminarODesactivar(id: number): Promise<void>;
 }
 
 /** Historial inalterable de la solicitud (tabla `historial_solicitudes`). */
@@ -68,7 +90,7 @@ export interface HistorialSolicitudes {
   listar(solicitudId: number): Promise<HistorialItem[]>;
 }
 
-/** Evento de negocio sobre una solicitud; lo consume el módulo de notificaciones (Int. 4). */
+/** Evento de negocio sobre una solicitud; lo consume el módulo de notificaciones. */
 export type TipoEventoSolicitud =
   | 'REGISTRO'
   | 'CAMBIO_ESTADO'
@@ -96,7 +118,6 @@ export interface EventoSolicitud {
 }
 
 export interface EventosSolicitud {
-  /** Se invoca dentro de la transacción de la operación que origina el evento. */
   publicar(evento: EventoSolicitud): Promise<void>;
 }
 

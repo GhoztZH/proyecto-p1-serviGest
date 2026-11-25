@@ -20,6 +20,8 @@ export interface DetalleValidacion {
 }
 
 export class AppError extends Error {
+  readonly statusCode: number;
+
   constructor(
     readonly status: number,
     readonly code: ErrorCode,
@@ -28,6 +30,27 @@ export class AppError extends Error {
   ) {
     super(message);
     this.name = new.target.name;
+    this.statusCode = status;
+  }
+
+  static notFound(message = 'Recurso no encontrado'): AppError {
+    return new NotFoundError(message);
+  }
+
+  static unauthorized(message = 'No autenticado'): AppError {
+    return new UnauthorizedError(message);
+  }
+
+  static forbidden(message = 'No tiene permisos para realizar esta acción'): AppError {
+    return new ForbiddenError(message);
+  }
+
+  static conflict(message = 'Conflicto con el estado actual del recurso'): AppError {
+    return new ConflictError(message);
+  }
+
+  static validation(message = 'Error de validación', details?: unknown): AppError {
+    return new ValidationError(Array.isArray(details) ? details : [{ campo: 'general', mensaje: message }], message);
   }
 }
 
@@ -51,7 +74,7 @@ export class ForbiddenError extends AppError {
 
 export class NotFoundError extends AppError {
   constructor(entidad = 'Recurso') {
-    super(404, 'NO_ENCONTRADO', `${entidad} no encontrado`);
+    super(404, 'NO_ENCONTRADO', entidad.includes(' ') ? entidad : `${entidad} no encontrado`);
   }
 }
 

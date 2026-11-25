@@ -1,24 +1,20 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import type { AuthUser, UserRole } from '../types/common.types';
+import type { Perfil, Rol } from '../types/api.js';
 
-/**
- * Contexto global de autenticación y rol activo.
- * - Mantiene el usuario logueado en memoria y localStorage.
- * - Sincroniza el atributo data-role en <html> para que el Design System pinte los colores correctos.
- */
 interface AuthContextType {
-  user: AuthUser | null;
+  user: Perfil | null;
   token: string | null;
-  role: UserRole | null;
+  role: Rol | null;
   isAuthenticated: boolean;
-  login: (token: string, user: AuthUser) => void;
+  login: (token: string, user: Perfil) => void;
   logout: () => void;
+  actualizarUsuario: (user: Perfil) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<AuthUser | null>(() => {
+  const [user, setUser] = useState<Perfil | null>(() => {
     try {
       const saved = localStorage.getItem('user');
       return saved ? JSON.parse(saved) : null;
@@ -29,13 +25,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const [token, setToken] = useState<string | null>(() => localStorage.getItem('token'));
 
-  // Sincronizar el atributo data-role con el tag <html> para el Design System
+  // Sincronizar el atributo data-role en <html> para que el Design System aplique los colores
   useEffect(() => {
     const roleAttr = user?.rol ? user.rol.toLowerCase() : 'admin';
     document.documentElement.setAttribute('data-role', roleAttr);
   }, [user]);
 
-  const login = (newToken: string, newUser: AuthUser) => {
+  const login = (newToken: string, newUser: Perfil) => {
     setToken(newToken);
     setUser(newUser);
     localStorage.setItem('token', newToken);
@@ -50,6 +46,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     document.documentElement.setAttribute('data-role', 'admin');
   };
 
+  const actualizarUsuario = (updatedUser: Perfil) => {
+    setUser(updatedUser);
+    localStorage.setItem('user', JSON.stringify(updatedUser));
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -59,6 +60,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         isAuthenticated: !!token,
         login,
         logout,
+        actualizarUsuario,
       }}
     >
       {children}

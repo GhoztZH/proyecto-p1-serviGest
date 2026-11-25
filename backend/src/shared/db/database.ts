@@ -1,6 +1,12 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
-import { Pool, type PoolClient } from 'pg';
+import pg, { type PoolClient, type QueryResultRow } from 'pg';
 import type { UnitOfWork } from '../application/unit-of-work.js';
+
+const { Pool, types } = pg;
+
+types.setTypeParser(20, (value) => Number.parseInt(value, 10));
+types.setTypeParser(1700, (value) => Number.parseFloat(value));
+types.setTypeParser(1082, (value) => value);
 
 export interface Database extends UnitOfWork {
   query<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
@@ -18,22 +24,22 @@ interface TxContext {
 export class PgDatabase implements Database {
   private readonly als = new AsyncLocalStorage<TxContext>();
 
-  constructor(private readonly pool: Pool) {}
+  constructor(private readonly pool: InstanceType<typeof Pool>) {}
 
   static connect(connectionString: string): PgDatabase {
     return new PgDatabase(new Pool({ connectionString, max: 10 }));
   }
 
-  private get client(): PoolClient | Pool {
+  private get client(): PoolClient | InstanceType<typeof Pool> {
     return this.als.getStore()?.client ?? this.pool;
   }
 
-  async query<T extends object>(sql: string, params?: unknown[]): Promise<T[]> {
-    const result = await this.client.query(sql, params);
-    return result.rows as T[];
+  async query<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
+    const result = await this.client.query<T & QueryResultRow>(sql, params);
+    return result.rows;
   }
 
-  async one<T extends object>(sql: string, params?: unknown[]): Promise<T | undefined> {
+  async one<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | undefined> {
     const rows = await this.query<T>(sql, params);
     return rows[0];
   }
@@ -43,6 +49,8 @@ export class PgDatabase implements Database {
   }
 
   async run<T>(work: () => Promise<T>): Promise<T> {
+    if (this.als.getStore()) return work();
+
     const client = await this.pool.connect();
     const ctx: TxContext = { client, afterCommit: [] };
     let result: T;
@@ -69,7 +77,7 @@ export class PgDatabase implements Database {
   afterCommit(callback: () => void | Promise<void>): void {
     const ctx = this.als.getStore();
     if (ctx) ctx.afterCommit.push(callback);
-    else void Promise.resolve().then(callback).catch((e) => console.error('Fallo en efecto diferido', e));
+    else void Promise.resolve().then(callback).catch((error) => console.error('Fallo en efecto diferido', error));
   }
 
   async ping(): Promise<void> {

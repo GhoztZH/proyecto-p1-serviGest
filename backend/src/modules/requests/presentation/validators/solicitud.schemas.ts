@@ -5,7 +5,7 @@ const MIN_MOTIVO_REAPERTURA = 10;
 
 const fecha = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Formato YYYY-MM-DD requerido');
 
-function listaDe<T extends string>(valores: readonly T[], msg: string) {
+function listaDe<T extends string>(valores: readonly T[]) {
   return z.string().transform((v) =>
     v
       .split(',')
@@ -31,8 +31,8 @@ export const filtroSolicitudesSchema = z
   .object({
     page: z.coerce.number().int().min(1).default(1),
     limit: z.coerce.number().int().min(1).max(100).default(10),
-    estado: listaDe<Estado>(ESTADOS, 'Estado inválido').optional(),
-    prioridad: listaDe(['BAJA', 'MEDIA', 'ALTA', 'CRITICA'] as const, 'Prioridad inválida').optional(),
+    estado: listaDe<Estado>(ESTADOS).optional(),
+    prioridad: listaDe(['BAJA', 'MEDIA', 'ALTA', 'CRITICA'] as const).optional(),
     categoria_id: idOpcional,
     sede_id: idOpcional,
     cliente_id: idOpcional,

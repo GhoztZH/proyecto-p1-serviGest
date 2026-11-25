@@ -273,7 +273,7 @@ export function SolicitudDetallePage() {
         <div style={{ padding: '12px', backgroundColor: '#fef2f2', border: '1px solid #fecaca', borderRadius: '8px', color: '#dc2626', fontSize: '13px', marginBottom: '16px' }}>
           {detalle.error ?? 'Solicitud no encontrada'}
         </div>
-        <Link to="/solicitudes" style={{ color: 'var(--color-accent, #3b82f6)', textDecoration: 'none', fontSize: '13px' }}>← Volver a solicitudes</Link>
+        <Link to="/requests" style={{ color: 'var(--color-accent, #3b82f6)', textDecoration: 'none', fontSize: '13px' }}>← Volver a solicitudes</Link>
       </div>
     );
   }
@@ -327,7 +327,7 @@ export function SolicitudDetallePage() {
             {s.cliente_nombre} · Sede {s.sede_nombre} · {s.categoria_nombre}
           </p>
         </div>
-        <Link to="/solicitudes" style={{ color: 'var(--color-text-muted, #9ca3af)', textDecoration: 'none', fontSize: '13px' }}>
+        <Link to="/requests" style={{ color: 'var(--color-text-muted, #9ca3af)', textDecoration: 'none', fontSize: '13px' }}>
           ← Volver
         </Link>
       </div>

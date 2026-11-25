@@ -115,7 +115,7 @@ export function SolicitudesPage() {
         </div>
         {role === 'CLIENTE' && (
           <Link
-            to="/solicitudes/nueva"
+            to="/requests/new"
             style={{
               display: 'inline-flex',
               alignItems: 'center',
@@ -198,7 +198,7 @@ export function SolicitudesPage() {
               <div style={{ fontSize: '32px', marginBottom: '8px' }}>📋</div>
               <div>No hay solicitudes en esta sección</div>
               {role === 'CLIENTE' && (
-                <Link to="/solicitudes/nueva" style={{ color: 'var(--color-accent, #3b82f6)', textDecoration: 'none', fontSize: '13px', marginTop: '8px', display: 'inline-block' }}>
+                <Link to="/requests/new" style={{ color: 'var(--color-accent, #3b82f6)', textDecoration: 'none', fontSize: '13px', marginTop: '8px', display: 'inline-block' }}>
                   Crear la primera solicitud
                 </Link>
               )}
@@ -208,7 +208,7 @@ export function SolicitudesPage() {
               {pagina.data.map((s) => (
                 <div
                   key={s.id}
-                  onClick={() => navigate(`/solicitudes/${s.id}`)}
+                  onClick={() => navigate(`/requests/${s.id}`)}
                   style={{
                     padding: '16px',
                     backgroundColor: 'var(--color-surface, #fff)',
