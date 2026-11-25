@@ -1,17 +1,18 @@
 /**
- * Errores de aplicación según la especificación docs/api/openapi.yaml.
- * Cada error conoce su código de contrato y su estado HTTP.
+ * Errores de aplicación. Cada uno conoce su código de contrato (OpenAPI) y su
+ * estado HTTP, pero no depende de Express: la traducción a respuesta ocurre en
+ * el manejador centralizado de la capa de presentación.
  */
 export type ErrorCode =
-  | 'SOLICITUD_INVALIDA'  // 400
-  | 'NO_AUTENTICADO'      // 401
-  | 'PROHIBIDO'           // 403
-  | 'NO_ENCONTRADO'       // 404
-  | 'CONFLICTO'           // 409
-  | 'VALIDACION'          // 422
-  | 'REGLA_NEGOCIO'       // 422
-  | 'DEMASIADOS_INTENTOS' // 429
-  | 'ERROR_INTERNO';      // 500
+  | 'SOLICITUD_INVALIDA'
+  | 'NO_AUTENTICADO'
+  | 'PROHIBIDO'
+  | 'NO_ENCONTRADO'
+  | 'CONFLICTO'
+  | 'VALIDACION'
+  | 'REGLA_NEGOCIO'
+  | 'DEMASIADOS_INTENTOS'
+  | 'ERROR_INTERNO';
 
 export interface DetalleValidacion {
   campo: string;

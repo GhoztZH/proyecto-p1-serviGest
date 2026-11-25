@@ -60,7 +60,7 @@ export { offsetDe, pagina, type Meta, type Pagina, type Paginacion } from '../ap
 
 // ---- Esquemas reutilizables ----------------------------------------------
 
-export const booleanoQuery = z.enum(['true', 'false'], { error: 'Debe ser true o false' }).transform((v) => v === 'true');
+export const booleanoQuery = z.enum(['true', 'false'], { error: 'Debe ser true o false' }).transform((value) => value === 'true');
 
 export const textoRequerido = (campo: string, min: number, max: number) =>
   z
@@ -74,7 +74,7 @@ export const textoOpcional = (max: number) =>
     .string()
     .trim()
     .max(max, `Máximo ${max} caracteres`)
-    .transform((v) => (v === '' ? null : v))
+    .transform((value) => (value === '' ? null : value))
     .nullish();
 
 export const emailSchema = z
@@ -87,9 +87,7 @@ export const emailSchema = z
 export const enteroPositivo = (campo: string) =>
   z.coerce.number({ error: `${campo} debe ser un número` }).int(`${campo} debe ser un entero`).min(1, `${campo} es obligatorio`);
 
-export const passwordSchema = z
-  .string({ error: 'La contraseña es obligatoria' })
-  .superRefine((valor, ctx) => {
-    const motivo = motivoPasswordInvalida(valor);
-    if (motivo) ctx.addIssue({ code: 'custom', message: motivo });
-  });
+export const passwordSchema = z.string({ error: 'La contraseña es obligatoria' }).superRefine((value, context) => {
+  const motivo = motivoPasswordInvalida(value);
+  if (motivo) context.addIssue({ code: 'custom', message: motivo });
+});

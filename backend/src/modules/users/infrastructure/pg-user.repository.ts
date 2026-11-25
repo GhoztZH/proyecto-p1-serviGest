@@ -2,7 +2,7 @@ import type { Rol } from '../../../shared/domain/auth-user.js';
 import type { Database } from '../../../shared/db/database.js';
 import type { Usuario, UsuarioConCredenciales } from '../domain/user.types.js';
 import type { FiltroUsuarios, UserRepository } from '../domain/user.types.js';
-import type { CredencialesUsuario, CuentaConCredenciales } from '../../auth/domain/auth.types.js';
+import type { CredencialesUsuario } from '../../auth/domain/auth.types.js';
 
 const COLUMNAS = `u.id, u.email, u.nombre, r.codigo AS rol, u.activo, u.ultimo_acceso, u.created_at, u.updated_at`;
 const DESDE = `FROM usuarios u JOIN roles r ON r.id = u.rol_id`;
@@ -96,7 +96,7 @@ export class PgUserRepository implements UserRepository, CredencialesUsuario {
   }
 
   async eliminarSiSinRastro(id: number): Promise<boolean> {
-    const eliminadas = await this.db.execute(
+    const eliminadas = await this.db.query<{ id: number }>(
       `DELETE FROM usuarios u
         WHERE u.id = $1
           AND NOT EXISTS (SELECT 1 FROM historial_solicitudes h WHERE h.usuario_id = u.id)
@@ -104,10 +104,11 @@ export class PgUserRepository implements UserRepository, CredencialesUsuario {
           AND NOT EXISTS (SELECT 1 FROM asignaciones a WHERE a.asignado_por = u.id)
           AND NOT EXISTS (SELECT 1 FROM adjuntos ad WHERE ad.subido_por = u.id)
           AND NOT EXISTS (SELECT 1 FROM clientes c WHERE c.usuario_id = u.id)
-          AND NOT EXISTS (SELECT 1 FROM tecnicos t WHERE t.usuario_id = u.id)`,
+          AND NOT EXISTS (SELECT 1 FROM tecnicos t WHERE t.usuario_id = u.id)
+        RETURNING u.id`,
       [id],
     );
-    return eliminadas > 0;
+    return eliminadas.length > 0;
   }
 
   async idsActivosPorRol(roles: Rol[]): Promise<number[]> {

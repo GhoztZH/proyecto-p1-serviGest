@@ -1,6 +1,6 @@
 /**
  * Unidad de trabajo: frontera transaccional que usan los casos de uso.
- * La capa de aplicación depende de esta abstracción, no de PostgreSQL directamente.
+ * La capa de aplicación depende de esta abstracción, no de PostgreSQL.
  */
 export interface UnitOfWork {
   /** Ejecuta `work` de forma atómica: todo se confirma o nada se aplica. */

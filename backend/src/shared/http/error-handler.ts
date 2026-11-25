@@ -27,19 +27,14 @@ function desdePostgres(error: { code?: string }): { status: number; body: Cuerpo
   }
 }
 
-export function errorHandler(
-  err: unknown,
-  _req: Request,
-  res: Response,
-  _next: NextFunction,
-): void {
+export function errorHandler(err: unknown, _req: Request, res: Response, _next: NextFunction): void {
   if (err instanceof AppError) {
     res.status(err.status).json(cuerpo(err.code, err.message, err.details));
     return;
   }
 
   if (err instanceof ZodError) {
-    const details = err.issues.map((i) => ({ campo: i.path.join('.'), mensaje: i.message }));
+    const details = err.issues.map((issue) => ({ campo: issue.path.join('.'), mensaje: issue.message }));
     res.status(422).json(cuerpo('VALIDACION', 'Error de validación en los datos', details));
     return;
   }

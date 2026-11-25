@@ -1,9 +1,8 @@
 import type { Rol } from '../domain/auth-user.js';
 
 /**
- * Contratos e interfaces compartidas entre módulos para desacoplar implementaciones.
+ * Puertos e interfaces compartidas entre módulos para desacoplar implementaciones.
  */
-
 export interface PasswordHasher {
   hash(plain: string): Promise<string>;
   verify(hash: string, plain: string): Promise<boolean>;
@@ -30,13 +29,9 @@ export interface AuditLogger {
   registrar(registro: RegistroAuditoria): Promise<void>;
 }
 
-/**
- * Placeholder/Noop de AuditLogger para cuando el módulo 'audit' no esté conectado aún.
- * NOTA: El Integrante 4 implementará el módulo completo de auditoría.
- */
+/** Placeholder hasta que el módulo de auditoría persista en base de datos. */
 export const noopAuditLogger: AuditLogger = {
-  async registrar(registro: RegistroAuditoria): Promise<void> {
-    // Registro en log temporal de consola en desarrollo hasta que el módulo audit persista en BD
+  async registrar(registro): Promise<void> {
     if (process.env.NODE_ENV !== 'production') {
       console.log(`[AUDIT PLACEHOLDER] ${registro.accion} en ${registro.entidad} por usuario ${registro.usuarioId ?? 'anónimo'}`);
     }
@@ -54,6 +49,79 @@ export interface CuentaNueva {
 export interface CuentasUsuario {
   crear(cuenta: CuentaNueva): Promise<number>;
   actualizar(id: number, cambios: { nombre?: string; email?: string; activo?: boolean }): Promise<void>;
-  /** Elimina la cuenta si no dejó rastro operativo; en caso contrario la desactiva. */
   eliminarODesactivar(id: number): Promise<void>;
+}
+
+/** Historial inalterable de la solicitud (tabla `historial_solicitudes`). */
+export type AccionHistorial =
+  | 'CREACION'
+  | 'CAMBIO_ESTADO'
+  | 'ASIGNACION'
+  | 'REASIGNACION'
+  | 'COMENTARIO'
+  | 'REAPERTURA'
+  | 'ADJUNTO'
+  | 'CAMBIO_PRIORIDAD';
+
+export interface EntradaHistorial {
+  solicitudId: number;
+  usuarioId: number;
+  accion: AccionHistorial;
+  estadoAnterior?: string | null;
+  estadoNuevo?: string | null;
+  comentario?: string | null;
+  detalle?: Record<string, unknown> | null;
+}
+
+export interface HistorialItem {
+  id: number;
+  accion: AccionHistorial;
+  estado_anterior: string | null;
+  estado_nuevo: string | null;
+  comentario: string | null;
+  detalle: Record<string, unknown> | null;
+  usuario_nombre: string;
+  usuario_rol: Rol;
+  fecha: Date;
+}
+
+export interface HistorialSolicitudes {
+  registrar(entrada: EntradaHistorial): Promise<void>;
+  listar(solicitudId: number): Promise<HistorialItem[]>;
+}
+
+/** Evento de negocio sobre una solicitud; lo consume el módulo de notificaciones. */
+export type TipoEventoSolicitud =
+  | 'REGISTRO'
+  | 'CAMBIO_ESTADO'
+  | 'ASIGNACION'
+  | 'REASIGNACION'
+  | 'COMENTARIO'
+  | 'REAPERTURA'
+  | 'ADJUNTO';
+
+export interface EventoSolicitud {
+  tipo: TipoEventoSolicitud;
+  actorId: number;
+  actorNombre: string;
+  solicitud: {
+    id: number;
+    codigo: string;
+    titulo: string;
+    clienteId: number;
+    tecnicoId: number | null;
+    estado: string;
+  };
+  estadoAnterior?: string;
+  tecnicoAnteriorId?: number | null;
+  comentario?: string | null;
+}
+
+export interface EventosSolicitud {
+  publicar(evento: EventoSolicitud): Promise<void>;
+}
+
+/** Lectura de parámetros operativos. */
+export interface ParametrosOperativos {
+  numero(clave: string, porDefecto: number): Promise<number>;
 }

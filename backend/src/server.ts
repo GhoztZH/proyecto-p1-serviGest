@@ -18,6 +18,7 @@ export function createServer(): Express {
   );
 
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   // Rutas base de salud / comprobación
   app.use('/api', healthRouter);
@@ -27,7 +28,7 @@ export function createServer(): Express {
     app.use('/api', moduleRouter);
   }
 
-  // Manejador global de errores (openapi.yaml)
+  // Manejador global de errores
   app.use(errorHandler);
 
   return app;

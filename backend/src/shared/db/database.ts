@@ -1,50 +1,51 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import pg, { type PoolClient, type QueryResultRow } from 'pg';
 import type { UnitOfWork } from '../application/unit-of-work.js';
-import { pool as defaultPool } from './connection.js';
 
 const { Pool, types } = pg;
 
-// BIGINT (ids BIGSERIAL, COUNT) y NUMERIC como número; DATE como texto 'YYYY-MM-DD'.
-types.setTypeParser(20, (v) => Number.parseInt(v, 10));
-types.setTypeParser(1700, (v) => Number.parseFloat(v));
-types.setTypeParser(1082, (v) => v);
+types.setTypeParser(20, (value) => Number.parseInt(value, 10));
+types.setTypeParser(1700, (value) => Number.parseFloat(value));
+types.setTypeParser(1082, (value) => value);
+
+export interface Database extends UnitOfWork {
+  query<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]>;
+  one<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | undefined>;
+  execute(sql: string, params?: unknown[]): Promise<void>;
+  ping(): Promise<void>;
+  close(): Promise<void>;
+}
 
 interface TxContext {
   client: PoolClient;
   afterCommit: Array<() => void | Promise<void>>;
 }
 
-type SqlParams = ReadonlyArray<unknown>;
-
-/**
- * Acceso a PostgreSQL con unidad de trabajo implícita.
- * `run()` abre una transacción y la asocia al flujo asíncrono actual (AsyncLocalStorage).
- */
-export class Database implements UnitOfWork {
+export class PgDatabase implements Database {
   private readonly als = new AsyncLocalStorage<TxContext>();
 
-  constructor(private readonly pool: InstanceType<typeof Pool> = defaultPool) {}
+  constructor(private readonly pool: InstanceType<typeof Pool>) {}
 
-  static connect(connectionString: string): Database {
-    return new Database(new Pool({ connectionString, max: 10 }));
+  static connect(connectionString: string): PgDatabase {
+    return new PgDatabase(new Pool({ connectionString, max: 10 }));
   }
 
-  async query<T extends QueryResultRow = QueryResultRow>(text: string, params: SqlParams = []): Promise<T[]> {
-    const executor = this.als.getStore()?.client ?? this.pool;
-    const result = await executor.query<T>(text, params as unknown[]);
+  private get client(): PoolClient | InstanceType<typeof Pool> {
+    return this.als.getStore()?.client ?? this.pool;
+  }
+
+  async query<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T[]> {
+    const result = await this.client.query<T & QueryResultRow>(sql, params);
     return result.rows;
   }
 
-  async one<T extends QueryResultRow = QueryResultRow>(text: string, params: SqlParams = []): Promise<T | undefined> {
-    const rows = await this.query<T>(text, params);
+  async one<T extends object = Record<string, unknown>>(sql: string, params?: unknown[]): Promise<T | undefined> {
+    const rows = await this.query<T>(sql, params);
     return rows[0];
   }
 
-  async execute(text: string, params: SqlParams = []): Promise<number> {
-    const executor = this.als.getStore()?.client ?? this.pool;
-    const result = await executor.query(text, params as unknown[]);
-    return result.rowCount ?? 0;
+  async execute(sql: string, params?: unknown[]): Promise<void> {
+    await this.client.query(sql, params);
   }
 
   async run<T>(work: () => Promise<T>): Promise<T> {
@@ -76,7 +77,7 @@ export class Database implements UnitOfWork {
   afterCommit(callback: () => void | Promise<void>): void {
     const ctx = this.als.getStore();
     if (ctx) ctx.afterCommit.push(callback);
-    else void Promise.resolve().then(callback).catch((e) => console.error('Fallo en efecto diferido', e));
+    else void Promise.resolve().then(callback).catch((error) => console.error('Fallo en efecto diferido', error));
   }
 
   async ping(): Promise<void> {
