@@ -16,11 +16,12 @@ export function createServer(): Express {
   );
 
   app.use(express.json());
+  app.use(express.urlencoded({ extended: true }));
 
   // Rutas base bajo el prefijo /api
   app.use('/api', router);
 
-  // Manejador global de errores (openapi.yaml)
+  // Manejador global de errores
   app.use(errorHandler);
 
   return app;

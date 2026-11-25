@@ -13,7 +13,7 @@ export function errorHandler(
   _next: NextFunction,
 ): void {
   if (err instanceof AppError) {
-    res.status(err.statusCode).json({
+    res.status(err.status).json({
       error: {
         code: err.code,
         message: err.message,
