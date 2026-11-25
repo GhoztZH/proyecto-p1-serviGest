@@ -2,8 +2,8 @@ import axios from 'axios';
 
 /**
  * Cliente HTTP unificado para consumir la API de ServiGest.
- * - Base URL: '/api' (conectada por el proxy de Vite en dev hacia http://localhost:3000)
- * - Adjunta automáticamente el token Bearer si existe en localStorage
+ * - Base URL: '/api' (redirigida en desarrollo por Vite hacia http://localhost:3000)
+ * - Inyecta automáticamente el token Bearer si existe en localStorage
  */
 export const api = axios.create({
   baseURL: '/api',
@@ -35,3 +35,12 @@ api.interceptors.response.use(
     return Promise.reject(error);
   },
 );
+
+/** Limpia parámetros query vacíos o nulos antes de enviarlos en GET. */
+export function limpiarParams(params: Record<string, unknown>): Record<string, unknown> {
+  const limpio: Record<string, unknown> = {};
+  for (const [k, v] of Object.entries(params)) {
+    if (v !== '' && v !== null && v !== undefined) limpio[k] = v;
+  }
+  return limpio;
+}
