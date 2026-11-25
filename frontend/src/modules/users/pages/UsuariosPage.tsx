@@ -17,7 +17,7 @@ export const UsuariosPage: React.FC = () => {
   const [pagina, setPagina] = useState(1);
   const [busqueda, setBusqueda] = useState('');
   const [filtroRol, setFiltroRol] = useState<Rol | ''>('');
-  const [cargando, setCargando] = useState(false);
+  const [cargando, setCargando] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   // Modal para Crear Usuario (A6)
@@ -36,8 +36,6 @@ export const UsuariosPage: React.FC = () => {
   const [errorReset, setErrorReset] = useState<string | null>(null);
 
   const cargarUsuarios = useCallback(async () => {
-    setCargando(true);
-    setError(null);
     try {
       const res = await userService.listar({
         page: pagina,
@@ -55,8 +53,32 @@ export const UsuariosPage: React.FC = () => {
   }, [pagina, busqueda, filtroRol]);
 
   useEffect(() => {
-    cargarUsuarios();
-  }, [cargarUsuarios]);
+    let vigente = true;
+    const cargar = async () => {
+      try {
+        const res = await userService.listar({
+          page: pagina,
+          limit: 10,
+          q: busqueda || undefined,
+          rol: filtroRol || undefined,
+        });
+        if (vigente) {
+          setUsuarios(res.data);
+          setTotal(res.meta.total);
+        }
+      } catch (err: unknown) {
+        const error = err as { response?: { data?: { error?: { message?: string } } } };
+        if (vigente) setError(error.response?.data?.error?.message ?? 'Error al cargar los usuarios');
+      } finally {
+        if (vigente) setCargando(false);
+      }
+    };
+
+    void cargar();
+    return () => {
+      vigente = false;
+    };
+  }, [pagina, busqueda, filtroRol]);
 
   const handleCrearUsuario = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -74,6 +96,8 @@ export const UsuariosPage: React.FC = () => {
       setNuevoNombre('');
       setNuevoEmail('');
       setNuevoPassword('');
+      setCargando(true);
+      setError(null);
       cargarUsuarios();
     } catch (err: any) {
       setErrorCrear(err.response?.data?.error?.message ?? 'Error al crear el usuario');
@@ -85,6 +109,8 @@ export const UsuariosPage: React.FC = () => {
   const handleToggleActivo = async (u: Usuario) => {
     try {
       await userService.actualizar(u.id, { activo: !u.activo });
+      setCargando(true);
+      setError(null);
       cargarUsuarios();
     } catch (err: any) {
       alert(err.response?.data?.error?.message ?? 'No se pudo cambiar el estado del usuario');
@@ -156,7 +182,11 @@ export const UsuariosPage: React.FC = () => {
           type="text"
           placeholder="Buscar por nombre o correo…"
           value={busqueda}
-          onChange={(e) => setBusqueda(e.target.value)}
+          onChange={(e) => {
+            setCargando(true);
+            setError(null);
+            setBusqueda(e.target.value);
+          }}
           style={{
             flex: 1,
             height: '36px',
@@ -170,7 +200,11 @@ export const UsuariosPage: React.FC = () => {
 
         <select
           value={filtroRol}
-          onChange={(e) => setFiltroRol(e.target.value as Rol | '')}
+          onChange={(e) => {
+            setCargando(true);
+            setError(null);
+            setFiltroRol(e.target.value as Rol | '');
+          }}
           style={{
             height: '36px',
             padding: '0 12px',
@@ -270,10 +304,28 @@ export const UsuariosPage: React.FC = () => {
             Total: {total} usuarios
           </span>
           <div style={{ display: 'flex', gap: '8px' }}>
-            <Button variant="secondary" size="sm" disabled={pagina <= 1} onClick={() => setPagina((p) => p - 1)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={pagina <= 1}
+              onClick={() => {
+                setCargando(true);
+                setError(null);
+                setPagina((p) => p - 1);
+              }}
+            >
               Anterior
             </Button>
-            <Button variant="secondary" size="sm" disabled={usuarios.length < 10} onClick={() => setPagina((p) => p + 1)}>
+            <Button
+              variant="secondary"
+              size="sm"
+              disabled={usuarios.length < 10}
+              onClick={() => {
+                setCargando(true);
+                setError(null);
+                setPagina((p) => p + 1);
+              }}
+            >
               Siguiente
             </Button>
           </div>

@@ -10,6 +10,9 @@ import { RecuperarPage } from './modules/auth/pages/RecuperarPage.js';
 import { RestablecerPage } from './modules/auth/pages/RestablecerPage.js';
 import { PerfilPage } from './modules/auth/pages/PerfilPage.js';
 import { UsuariosPage } from './modules/users/pages/UsuariosPage.js';
+import { NuevaSolicitudPage } from './modules/requests/pages/NuevaSolicitudPage.js';
+import { SolicitudDetallePage } from './modules/requests/pages/SolicitudDetallePage.js';
+import { SolicitudesPage } from './modules/requests/pages/SolicitudesPage.js';
 
 /** Redirección inteligente al inicio correspondiente por rol */
 const RedireccionInicio: React.FC = () => {
@@ -130,16 +133,13 @@ export function App() {
                 />
               }
             />
-            <Route
-              path="/requests/*"
-              element={
-                <ModuloPlaceholder
-                  modulo="Solicitudes de Servicio (Core)"
-                  integrante={3}
-                  descripcion="Ciclo de vida de solicitudes, aprobación, asignación a técnicos y resolución."
-                />
-              }
-            />
+            <Route path="/requests" element={<SolicitudesPage />} />
+            <Route path="/requests/new" element={<NuevaSolicitudPage />} />
+            <Route path="/requests/nueva" element={<Navigate to="/requests/new" replace />} />
+            <Route path="/requests/:id" element={<SolicitudDetallePage />} />
+            <Route path="/solicitudes" element={<Navigate to="/requests" replace />} />
+            <Route path="/solicitudes/nueva" element={<Navigate to="/requests/new" replace />} />
+            <Route path="/solicitudes/:id" element={<SolicitudDetallePage />} />
             <Route
               path="/dashboard"
               element={
